@@ -5,7 +5,18 @@ use anyhow::{anyhow, Result};
 const DICTIONARY: &'static str = include_str!("../res/collins-scrabble-words-2019.txt");
 
 fn distance(w1: &[u8], w2: &[u8]) -> usize {
-    w1.iter().zip(w2.iter()).filter(|(a, b)| a != b).count()
+    let mut count = 0;
+
+    for (a, b) in w1.iter().zip(w2.iter()) {
+        if a != b {
+            count += 1;
+            if count > 1 {
+                return count;
+            }
+        }
+    }
+
+    return count;
 }
 
 fn main() -> Result<()> {
