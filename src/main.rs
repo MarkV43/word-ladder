@@ -35,9 +35,6 @@ fn main() -> Result<()> {
         handle.read_line(&mut target)?;
 
         drop(handle);
-
-        // origin.pop().unwrap();
-        // target.pop().unwrap();
     } else {
         origin = args.word1.unwrap();
         target = args.word2.unwrap();

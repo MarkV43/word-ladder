@@ -71,7 +71,6 @@ pub fn solve_ladder(origin: &[u8], target: &[u8], randomize: bool) -> Result<()>
             );
 
             println!("\nElapsed: {dur:?}");
-
             return Ok(());
         }
 
