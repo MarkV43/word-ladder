@@ -126,6 +126,11 @@ fn solve_ladder(origin: &[u8], target: &[u8]) -> Result<()> {
             return Ok(());
         }
 
+        if search_front.is_empty() || search_back.is_empty() {
+            println!("\nThere is no solution");
+            return Ok(());
+        }
+
         dist += 1;
     }
 }
