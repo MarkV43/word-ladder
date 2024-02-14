@@ -8,4 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 clap = { version = "4.5.0", features = ["derive"] }
+eframe = "0.26.2"
+egui = "0.26.2"
 rand = "0.8.5"

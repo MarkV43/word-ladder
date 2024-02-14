@@ -1,12 +1,17 @@
 #![warn(clippy::all, clippy::pedantic)]
 
+mod gui;
 mod solver;
 
-use crate::solver::solve_ladder;
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use solver::find_largest_ladder;
+use gui::initialize_egui;
+use solver::Solver;
 use std::{io::BufRead, time::Instant};
+
+use crate::solver::bfs2d::BFS2D;
+
+const DICTIONARY: &str = include_str!("../res/collins-scrabble-words-2019.txt");
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -17,6 +22,8 @@ struct Args {
     random: bool,
     #[arg(short, long)]
     largest: Option<usize>,
+    #[arg(long)]
+    gui: bool,
 }
 
 fn main() -> Result<()> {
@@ -25,10 +32,20 @@ fn main() -> Result<()> {
     let mut origin;
     let mut target;
 
-    if let Some(length) = args.largest {
+    let dictionary = DICTIONARY
+        .lines()
+        .map(str::trim)
+        .map(str::as_bytes)
+        .collect::<Vec<_>>();
+
+    let solver = BFS2D::new(&dictionary, args.random);
+
+    if args.gui {
+        initialize_egui(&solver);
+    } else if let Some(length) = args.largest {
         let t0 = Instant::now();
 
-        let result = find_largest_ladder(length, args.random);
+        let result = solver.find_largest_ladder(length, args.random);
 
         let dur = t0.elapsed();
 
@@ -70,7 +87,7 @@ fn main() -> Result<()> {
 
         let t0 = Instant::now();
 
-        let result = solve_ladder(origin, target, args.random)?;
+        let result = solver.solve(origin, target)?;
 
         let dur = t0.elapsed();
 
