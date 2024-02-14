@@ -1,6 +1,5 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use rand::{seq::SliceRandom, thread_rng};
-use std::time::Instant;
 
 const DICTIONARY: &'static str = include_str!("../res/collins-scrabble-words-2019.txt");
 
@@ -19,9 +18,11 @@ fn distance(w1: &[u8], w2: &[u8]) -> usize {
     return count;
 }
 
-pub fn solve_ladder(origin: &[u8], target: &[u8], randomize: bool) -> Result<()> {
-    let t0 = Instant::now();
-
+pub fn solve_ladder<'a>(
+    origin: &'a [u8],
+    target: &'a [u8],
+    randomize: bool,
+) -> Result<Vec<&'a [u8]>> {
     let mut words: Vec<&[u8]> = DICTIONARY
         .lines()
         .skip(2)
@@ -47,8 +48,6 @@ pub fn solve_ladder(origin: &[u8], target: &[u8], randomize: bool) -> Result<()>
     let mut next_search_back = vec![];
 
     loop {
-        println!("Searching depth {dist}");
-
         let sol_front = iterate(
             &mut seen_front,
             &mut parents_front,
@@ -59,19 +58,14 @@ pub fn solve_ladder(origin: &[u8], target: &[u8], randomize: bool) -> Result<()>
         );
 
         if let Some(index_front) = sol_front {
-            let dur = t0.elapsed();
-
-            show_solution(
+            return Ok(untangle_solution(
                 index_front,
                 true,
                 &seen_front,
                 &parents_front,
                 &seen_back,
                 &parents_back,
-            );
-
-            println!("\nElapsed: {dur:?}");
-            return Ok(());
+            ));
         }
 
         let sol_back = iterate(
@@ -84,24 +78,18 @@ pub fn solve_ladder(origin: &[u8], target: &[u8], randomize: bool) -> Result<()>
         );
 
         if let Some(index_back) = sol_back {
-            let dur = t0.elapsed();
-
-            show_solution(
+            return Ok(untangle_solution(
                 index_back,
                 false,
                 &seen_front,
                 &parents_front,
                 &seen_back,
                 &parents_back,
-            );
-
-            println!("\nElapsed: {dur:?}");
-            return Ok(());
+            ));
         }
 
         if search_front.is_empty() || search_back.is_empty() {
-            println!("\nThere is no solution");
-            return Ok(());
+            return Err(anyhow!("There is no solution"));
         }
 
         dist += 1;
@@ -135,14 +123,14 @@ fn iterate<'a>(
     None
 }
 
-fn show_solution(
+fn untangle_solution<'a>(
     index: usize,
     front: bool,
-    seen_front: &[&[u8]],
+    seen_front: &[&'a [u8]],
     parents_front: &[usize],
-    seen_back: &[&[u8]],
+    seen_back: &[&'a [u8]],
     parents_back: &[usize],
-) {
+) -> Vec<&'a [u8]> {
     let mut solution_front = Vec::new();
     let mut solution_back = Vec::new();
 
@@ -180,17 +168,10 @@ fn show_solution(
         );
     }
 
-    println!(
-        "\nFound a {}-step solution\n",
-        solution_front.len() + solution_back.len() - 2
-    );
-
-    for w in solution_front
-        .iter()
-        .chain(solution_back.iter().rev().skip(1))
-    {
-        println!("{}", String::from_utf8_lossy(w));
-    }
+    solution_front
+        .into_iter()
+        .chain(solution_back.into_iter().rev().skip(1))
+        .collect()
 }
 
 fn fill_solution<'a>(

@@ -3,7 +3,7 @@ mod solver;
 use crate::solver::solve_ladder;
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use std::io::BufRead;
+use std::{io::BufRead, time::Instant};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -16,8 +16,6 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-
-    println!("{args:?}");
 
     let mut origin;
     let mut target;
@@ -50,5 +48,19 @@ fn main() -> Result<()> {
     let origin: &[u8] = origin.trim().as_bytes();
     let target: &[u8] = target.trim().as_bytes();
 
-    solve_ladder(origin, target, args.random)
+    let t0 = Instant::now();
+
+    let result = solve_ladder(origin, target, args.random)?;
+
+    let dur = t0.elapsed();
+
+    println!("{}-step solution found\n", result.len() - 1);
+
+    for word in result {
+        println!("{}", String::from_utf8_lossy(word));
+    }
+
+    println!("\nElapsed {dur:?}");
+
+    Ok(())
 }
