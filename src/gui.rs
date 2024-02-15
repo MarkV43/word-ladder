@@ -21,6 +21,7 @@ struct MyApp<S: Solver> {
     target: String,
     solution: Option<Result<Vec<String>, String>>,
     duration: Option<Duration>,
+    exceptions: Vec<&'static [u8]>,
 }
 
 impl<S: Solver> MyApp<S> {
@@ -31,6 +32,7 @@ impl<S: Solver> MyApp<S> {
             target: Default::default(),
             solution: None,
             duration: None,
+            exceptions: Vec::new(),
         }
     }
 }
@@ -40,81 +42,141 @@ impl<S: Solver> eframe::App for MyApp<S> {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Word Ladder Solver");
 
-            egui::Grid::new("words")
-                .num_columns(3)
-                .spacing([10.0, 4.0])
-                .max_col_width(150.0)
-                .striped(false)
-                .show(ui, |ui| {
-                    let origin_label = ui.label("Origin: ");
-                    let mut origin = ui
-                        .text_edit_singleline(&mut self.origin)
-                        .labelled_by(origin_label.id);
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    egui::Grid::new("words")
+                        .num_columns(3)
+                        .spacing([10.0, 4.0])
+                        .max_col_width(150.0)
+                        .striped(false)
+                        .show(ui, |ui| {
+                            let origin_label = ui.label("Origin: ");
+                            let mut origin = ui
+                                .text_edit_singleline(&mut self.origin)
+                                .labelled_by(origin_label.id);
 
-                    if origin.changed() {
-                        self.origin.make_ascii_uppercase();
-                        origin.mark_changed();
-                        self.solution = None;
+                            if origin.changed() {
+                                self.origin.make_ascii_uppercase();
+                                origin.mark_changed();
+                                self.solution = None;
+                            }
+
+                            let bytes = self.origin.as_bytes();
+
+                            if !self.solver.word_exists(bytes) {
+                                ui.colored_label(Color32::RED, "Not found");
+                            }
+
+                            ui.end_row();
+
+                            let target_label = ui.label("Target: ");
+                            let mut target = ui
+                                .text_edit_singleline(&mut self.target)
+                                .labelled_by(target_label.id);
+
+                            if target.changed() {
+                                self.target.make_ascii_uppercase();
+                                target.mark_changed();
+                                self.solution = None;
+                            }
+
+                            let bytes = self.target.as_bytes();
+
+                            if !self.solver.word_exists(bytes) {
+                                ui.colored_label(Color32::RED, "Not found");
+                            }
+
+                            ui.end_row();
+                        });
+
+                    if ui.button("Solve").clicked() {
+                        self.update_solution();
                     }
 
-                    let bytes = self.origin.as_bytes();
+                    let mut to_be_updated = false;
 
-                    if !self.solver.word_exists(bytes) {
-                        ui.colored_label(Color32::RED, "Not found");
+                    match &self.solution {
+                        Some(Ok(solution)) => {
+                            ui.vertical(|ui| {
+                                for word in solution {
+                                    ui.horizontal(|ui| {
+                                        ui.label(word);
+
+                                        if ui.button("×").clicked() {
+                                            let bytes = word.as_bytes();
+                                            let word: &'static [u8] = self
+                                                .solver
+                                                .get_dictionary()
+                                                .iter()
+                                                .find(|&&w| w == bytes)
+                                                .unwrap();
+
+                                            self.exceptions.push(word);
+                                            self.solver.set_exceptions(&self.exceptions);
+
+                                            to_be_updated = true;
+                                        }
+                                    });
+                                }
+                            });
+
+                            ui.colored_label(
+                                Color32::LIGHT_BLUE,
+                                format!("{:?}", self.duration.unwrap()),
+                            );
+                        }
+                        Some(Err(err)) => {
+                            ui.colored_label(Color32::RED, err);
+                        }
+                        None => {}
                     }
 
-                    ui.end_row();
-
-                    let target_label = ui.label("Target: ");
-                    let mut target = ui
-                        .text_edit_singleline(&mut self.target)
-                        .labelled_by(target_label.id);
-
-                    if target.changed() {
-                        self.target.make_ascii_uppercase();
-                        target.mark_changed();
-                        self.solution = None;
+                    if to_be_updated {
+                        self.update_solution();
                     }
-
-                    let bytes = self.target.as_bytes();
-
-                    if !self.solver.word_exists(bytes) {
-                        ui.colored_label(Color32::RED, "Not found");
-                    }
-
-                    ui.end_row();
                 });
 
-            if ui.button("Solve").clicked() {
-                let origin = self.origin.as_bytes();
-                let target = self.target.as_bytes();
+                ui.vertical(|ui| {
+                    ui.heading("Exceptions:");
 
-                let t0 = Instant::now();
+                    ui.spacing();
 
-                self.solution = Some(
-                    self.solver
-                        .solve(origin, target)
-                        .map_err(|_| "No solution found".to_owned()),
-                );
+                    let mut to_be_removed = None;
 
-                self.duration = t0.elapsed().into();
-            }
+                    for (ind, exc) in self.exceptions.iter().enumerate() {
+                        ui.horizontal(|ui| {
+                            ui.label(String::from_utf8_lossy(exc));
 
-            match &self.solution {
-                Some(Ok(solution)) => {
-                    ui.vertical(|ui| {
-                        for word in solution {
-                            ui.label(word);
-                        }
-                    });
+                            if ui.button("×").clicked() {
+                                to_be_removed = Some(ind);
+                            }
+                        });
+                    }
 
-                    ui.colored_label(Color32::LIGHT_BLUE, format!("{:?}", self.duration.unwrap()));
-                }
-                Some(Err(err)) => {
-                    ui.colored_label(Color32::RED, err);
-                }
-                None => {}
-            }
+                    if let Some(ind) = to_be_removed {
+                        self.exceptions.remove(ind);
+                        self.solver.set_exceptions(&self.exceptions);
+                        self.update_solution();
+                    }
+                });
+            });
         });
+    }
+}
+
+impl<S: Solver> MyApp<S> {
+    fn update_solution(&mut self) {
+        let origin = self.origin.as_bytes();
+        let target = self.target.as_bytes();
+
+        let t0 = Instant::now();
+
+        self.solution = Some(
+            self.solver
+                .solve(origin, target)
+                .map_err(|_| "No solution found".to_owned()),
+        );
+
+        self.duration = t0.elapsed().into();
     }
 }

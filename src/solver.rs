@@ -7,6 +7,8 @@ pub trait Solver {
     fn solve(&self, origin: &[u8], target: &[u8]) -> Result<Vec<String>>;
     fn find_largest_ladder(&self, length: usize, randomize: bool) -> Vec<String>;
     fn word_exists(&self, word: &[u8]) -> bool;
+    fn get_dictionary(&self) -> &'static [&'static [u8]];
+    fn set_exceptions(&mut self, exceptions: &[&'static [u8]]);
 }
 
 /// Returns the distance between `w1` and `w2`.
