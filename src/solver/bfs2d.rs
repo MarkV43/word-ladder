@@ -15,7 +15,7 @@ impl<'a> Solver<'a> for BFS2D<'a> {
         }
     }
 
-    fn solve(&self, origin: &'a [u8], target: &'a [u8]) -> Result<Vec<&'a [u8]>> {
+    fn solve(&self, origin: &[u8], target: &[u8]) -> Result<Vec<String>> {
         assert_eq!(origin.len(), target.len());
 
         let mut words: Vec<&[u8]> = self
@@ -86,7 +86,7 @@ impl<'a> Solver<'a> for BFS2D<'a> {
         }
     }
 
-    fn find_largest_ladder(&self, length: usize, randomize: bool) -> Vec<&'a [u8]> {
+    fn find_largest_ladder(&self, length: usize, randomize: bool) -> Vec<String> {
         let mut words: Vec<&[u8]> = self
             .dictionary
             .iter()
@@ -140,6 +140,10 @@ impl<'a> Solver<'a> for BFS2D<'a> {
         let target_index = seen.len() - 1;
 
         untangle_solution(target_index, &seen, &parents)
+    }
+
+    fn word_exists(&self, word: &[u8]) -> bool {
+        self.dictionary.contains(&word)
     }
 }
 
@@ -197,7 +201,7 @@ fn untangle_solution_2way<'a>(
     parents_front: &[usize],
     seen_back: &[&'a [u8]],
     parents_back: &[usize],
-) -> Vec<&'a [u8]> {
+) -> Vec<String> {
     let (solution_front, solution_back) = if front {
         let index_back = seen_back
             .iter()
@@ -224,12 +228,12 @@ fn untangle_solution_2way<'a>(
         .collect()
 }
 
-fn untangle_solution<'a>(index: usize, seen: &[&'a [u8]], parents: &[usize]) -> Vec<&'a [u8]> {
+fn untangle_solution<'a>(index: usize, seen: &[&'a [u8]], parents: &[usize]) -> Vec<String> {
     let mut solution = Vec::new();
     let mut i = index;
 
     while i != usize::MAX {
-        solution.push(seen[i]);
+        solution.push(String::from_utf8_lossy(seen[i]).to_string());
         i = parents[i];
     }
 

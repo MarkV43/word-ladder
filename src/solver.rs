@@ -4,8 +4,9 @@ use anyhow::Result;
 
 pub trait Solver<'a> {
     fn new(dictionary: &'a [&'a [u8]], randomize: bool) -> Self;
-    fn solve(&self, origin: &'a [u8], target: &'a [u8]) -> Result<Vec<&'a [u8]>>;
-    fn find_largest_ladder(&self, length: usize, randomize: bool) -> Vec<&'a [u8]>;
+    fn solve(&self, origin: &[u8], target: &[u8]) -> Result<Vec<String>>;
+    fn find_largest_ladder(&self, length: usize, randomize: bool) -> Vec<String>;
+    fn word_exists(&self, word: &[u8]) -> bool;
 }
 
 /// Returns the distance between `w1` and `w2`.

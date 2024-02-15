@@ -41,7 +41,7 @@ fn main() -> Result<()> {
     let solver = BFS2D::new(&dictionary, args.random);
 
     if args.gui {
-        initialize_egui(&solver);
+        initialize_egui(&solver).map_err(|e| anyhow!("Error: {e:?}"))?;
     } else if let Some(length) = args.largest {
         let t0 = Instant::now();
 
@@ -52,7 +52,7 @@ fn main() -> Result<()> {
         println!("{}-step solution found\n", result.len() - 1);
 
         for word in result {
-            println!("{}", String::from_utf8_lossy(word));
+            println!("{}", word);
         }
 
         println!("\nElapsed {dur:?}");
@@ -94,7 +94,7 @@ fn main() -> Result<()> {
         println!("{}-step solution found\n", result.len() - 1);
 
         for word in result {
-            println!("{}", String::from_utf8_lossy(word));
+            println!("{}", word);
         }
 
         println!("\nElapsed {dur:?}");
