@@ -1,10 +1,12 @@
+use std::time::{Duration, Instant};
+
 use anyhow::{anyhow, Result};
 use eframe::{egui, AppCreator};
 use egui::Color32;
 
 use crate::solver::Solver;
 
-pub fn initialize_egui<'a, S: Solver<'a>>(solver: &'a S) -> Result<()> {
+pub fn initialize_egui<S: Solver + 'static>(solver: S) -> Result<()> {
     let options = eframe::NativeOptions::default();
 
     let ac = AppCreator::from(Box::new(|_cc| Box::new(MyApp::new(solver))));
@@ -13,23 +15,27 @@ pub fn initialize_egui<'a, S: Solver<'a>>(solver: &'a S) -> Result<()> {
         .map_err(|err| anyhow!("eframe Error: {err:?}"))
 }
 
-struct MyApp<'a, S: Solver<'a>> {
-    solver: &'a S,
+struct MyApp<S: Solver> {
+    solver: S,
     origin: String,
     target: String,
+    solution: Option<Result<Vec<String>, String>>,
+    duration: Option<Duration>,
 }
 
-impl<'a, S: Solver<'a>> MyApp<'a, S> {
-    fn new(solver: &'a S) -> Self {
+impl<S: Solver> MyApp<S> {
+    fn new(solver: S) -> Self {
         Self {
             solver,
             origin: Default::default(),
             target: Default::default(),
+            solution: None,
+            duration: None,
         }
     }
 }
 
-impl<'a, S: Solver<'a>> eframe::App for MyApp<'a, S> {
+impl<S: Solver> eframe::App for MyApp<S> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Word Ladder Solver");
@@ -48,6 +54,7 @@ impl<'a, S: Solver<'a>> eframe::App for MyApp<'a, S> {
                     if origin.changed() {
                         self.origin.make_ascii_uppercase();
                         origin.mark_changed();
+                        self.solution = None;
                     }
 
                     let bytes = self.origin.as_bytes();
@@ -66,12 +73,48 @@ impl<'a, S: Solver<'a>> eframe::App for MyApp<'a, S> {
                     if target.changed() {
                         self.target.make_ascii_uppercase();
                         target.mark_changed();
+                        self.solution = None;
                     }
 
-                    ui.colored_label(Color32::RED, "Not found");
+                    let bytes = self.target.as_bytes();
+
+                    if !self.solver.word_exists(bytes) {
+                        ui.colored_label(Color32::RED, "Not found");
+                    }
 
                     ui.end_row();
                 });
+
+            if ui.button("Solve").clicked() {
+                let origin = self.origin.as_bytes();
+                let target = self.target.as_bytes();
+
+                let t0 = Instant::now();
+
+                self.solution = Some(
+                    self.solver
+                        .solve(origin, target)
+                        .map_err(|_| "No solution found".to_owned()),
+                );
+
+                self.duration = t0.elapsed().into();
+            }
+
+            match &self.solution {
+                Some(Ok(solution)) => {
+                    ui.vertical(|ui| {
+                        for word in solution {
+                            ui.label(word);
+                        }
+                    });
+
+                    ui.colored_label(Color32::LIGHT_BLUE, format!("{:?}", self.duration.unwrap()));
+                }
+                Some(Err(err)) => {
+                    ui.colored_label(Color32::RED, err);
+                }
+                None => {}
+            }
         });
     }
 }

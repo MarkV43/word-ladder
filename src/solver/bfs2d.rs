@@ -2,13 +2,13 @@ use super::{distance, Solver};
 use anyhow::{anyhow, Result};
 use rand::{seq::SliceRandom, thread_rng};
 
-pub struct BFS2D<'a> {
-    dictionary: &'a [&'a [u8]],
+pub struct BFS2D {
+    dictionary: &'static [&'static [u8]],
     randomize: bool,
 }
 
-impl<'a> Solver<'a> for BFS2D<'a> {
-    fn new(dictionary: &'a [&'a [u8]], randomize: bool) -> Self {
+impl Solver for BFS2D {
+    fn new(dictionary: &'static [&'static [u8]], randomize: bool) -> Self {
         Self {
             dictionary,
             randomize,

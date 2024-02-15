@@ -2,8 +2,8 @@ pub mod bfs2d;
 
 use anyhow::Result;
 
-pub trait Solver<'a> {
-    fn new(dictionary: &'a [&'a [u8]], randomize: bool) -> Self;
+pub trait Solver {
+    fn new(dictionary: &'static [&'static [u8]], randomize: bool) -> Self;
     fn solve(&self, origin: &[u8], target: &[u8]) -> Result<Vec<String>>;
     fn find_largest_ladder(&self, length: usize, randomize: bool) -> Vec<String>;
     fn word_exists(&self, word: &[u8]) -> bool;
