@@ -52,7 +52,7 @@ impl Solver for BFS2D {
             );
 
             if let Some(index_front) = sol_front {
-                return Ok(self.untangle_solution_2way(
+                return Ok(Self::untangle_solution_2way(
                     index_front,
                     true,
                     &seen_front,
@@ -72,7 +72,7 @@ impl Solver for BFS2D {
             );
 
             if let Some(index_back) = sol_back {
-                return Ok(self.untangle_solution_2way(
+                return Ok(Self::untangle_solution_2way(
                     index_back,
                     false,
                     &seen_front,
@@ -141,7 +141,7 @@ impl Solver for BFS2D {
 
         let target_index = seen.len() - 1;
 
-        self.untangle_solution(target_index, &seen, &parents)
+        Self::untangle_solution(target_index, &seen, &parents)
     }
 
     fn word_exists(&self, word: &[u8]) -> bool {
@@ -153,7 +153,7 @@ impl Solver for BFS2D {
     }
 
     fn set_exceptions(&mut self, exceptions: &[&'static [u8]]) {
-        self.exceptions = exceptions.iter().cloned().collect();
+        self.exceptions = exceptions.to_vec();
     }
 }
 
@@ -213,13 +213,12 @@ impl BFS2D {
         next_search.clear();
     }
 
-    fn untangle_solution_2way<'a>(
-        &self,
+    fn untangle_solution_2way(
         index: usize,
         front: bool,
-        seen_front: &[&'a [u8]],
+        seen_front: &[&[u8]],
         parents_front: &[usize],
-        seen_back: &[&'a [u8]],
+        seen_back: &[&[u8]],
         parents_back: &[usize],
     ) -> Vec<String> {
         let (solution_front, solution_back) = if front {
@@ -228,8 +227,8 @@ impl BFS2D {
                 .position(|&w| w == seen_front[index])
                 .unwrap();
             (
-                self.untangle_solution(index, seen_front, parents_front),
-                self.untangle_solution(index_back, seen_back, parents_back),
+                Self::untangle_solution(index, seen_front, parents_front),
+                Self::untangle_solution(index_back, seen_back, parents_back),
             )
         } else {
             let index_front = seen_front
@@ -237,8 +236,8 @@ impl BFS2D {
                 .position(|&w| w == seen_back[index])
                 .unwrap();
             (
-                self.untangle_solution(index_front, seen_front, parents_front),
-                self.untangle_solution(index, seen_back, parents_back),
+                Self::untangle_solution(index_front, seen_front, parents_front),
+                Self::untangle_solution(index, seen_back, parents_back),
             )
         };
 
@@ -248,12 +247,7 @@ impl BFS2D {
             .collect()
     }
 
-    fn untangle_solution<'a>(
-        &self,
-        index: usize,
-        seen: &[&'a [u8]],
-        parents: &[usize],
-    ) -> Vec<String> {
+    fn untangle_solution(index: usize, seen: &[&[u8]], parents: &[usize]) -> Vec<String> {
         let mut solution = Vec::new();
         let mut i = index;
 

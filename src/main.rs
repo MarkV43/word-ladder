@@ -40,7 +40,7 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let solver = BFS2D::new(&*DICTIONARY, args.random);
+    let solver = BFS2D::new(&DICTIONARY, args.random);
 
     if args.gui {
         initialize_egui(solver).map_err(|e| anyhow!("Error: {e:?}"))?;
@@ -54,7 +54,7 @@ fn main() -> Result<()> {
         println!("{}-step solution found\n", result.len() - 1);
 
         for word in result {
-            println!("{}", word);
+            println!("{word}");
         }
 
         println!("\nElapsed {dur:?}");
@@ -99,7 +99,7 @@ fn main() -> Result<()> {
         println!("{}-step solution found\n", result.len() - 1);
 
         for word in result {
-            println!("{}", word);
+            println!("{word}");
         }
 
         println!("\nElapsed {dur:?}");
