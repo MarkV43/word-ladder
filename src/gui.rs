@@ -53,7 +53,7 @@ impl<S: Solver> eframe::App for MyApp<S> {
 
                     ui.set_max_size(size);
 
-                    let words = egui::Grid::new("words")
+                    let _words = egui::Grid::new("words")
                         .num_columns(3)
                         .spacing([10.0, 4.0])
                         .max_col_width(150.0)
@@ -104,7 +104,7 @@ impl<S: Solver> eframe::App for MyApp<S> {
                         }
 
                         if let Some(dur) = self.duration {
-                            ui.colored_label(Color32::LIGHT_BLUE, format!("{:?}", dur));
+                            ui.colored_label(Color32::LIGHT_BLUE, format!("{dur:?}"));
                         }
                     });
 
